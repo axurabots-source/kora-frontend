@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 import toast, { Toaster } from 'react-hot-toast'
-import { Plus, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { Plus, ArrowDownCircle, ArrowUpCircle, Download } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL
 
@@ -17,16 +17,8 @@ export default function CashBook() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ direction: 'in', amount: '', note: '', entry_date: '' })
 
-  useEffect(() => {
-    if (profile) fetchBusinesses()
-  }, [profile])
-
-  useEffect(() => {
-    if (selectedBusiness) {
-      fetchEntries()
-      fetchBalance()
-    }
-  }, [selectedBusiness])
+  useEffect(() => { if (profile) fetchBusinesses() }, [profile])
+  useEffect(() => { if (selectedBusiness) { fetchEntries(); fetchBalance() } }, [selectedBusiness])
 
   const getToken = async () => {
     const { data } = await supabase.auth.getSession()
@@ -34,28 +26,25 @@ export default function CashBook() {
   }
 
   const fetchBusinesses = async () => {
-    const { data } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('owner_id', profile.id)
+    const { data } = await supabase.from('businesses').select('*').eq('owner_id', profile.id)
     setBusinesses(data || [])
     if (data?.length > 0) setSelectedBusiness(data[0].id)
   }
 
   const fetchEntries = async () => {
     const token = await getToken()
-    const { data } = await axios.get(`${API}/api/cash/${selectedBusiness}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    setEntries(data)
+    try {
+      const { data } = await axios.get(`${API}/api/cash/${selectedBusiness}`, { headers: { Authorization: `Bearer ${token}` } })
+      setEntries(data || [])
+    } catch {}
   }
 
   const fetchBalance = async () => {
     const token = await getToken()
-    const { data } = await axios.get(`${API}/api/cash/${selectedBusiness}/balance`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    setBalance(data)
+    try {
+      const { data } = await axios.get(`${API}/api/cash/${selectedBusiness}/balance`, { headers: { Authorization: `Bearer ${token}` } })
+      setBalance(data)
+    } catch {}
   }
 
   const addEntry = async () => {
@@ -63,159 +52,157 @@ export default function CashBook() {
     setLoading(true)
     try {
       const token = await getToken()
-      await axios.post(`${API}/api/cash/${selectedBusiness}`, form, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      await axios.post(`${API}/api/cash/${selectedBusiness}`, form, { headers: { Authorization: `Bearer ${token}` } })
       toast.success('Cash entry added!')
       setShowModal(false)
       setForm({ direction: 'in', amount: '', note: '', entry_date: '' })
-      fetchEntries()
-      fetchBalance()
-    } catch (err) {
-      toast.error('Failed to add entry')
-    }
+      fetchEntries(); fetchBalance()
+    } catch { toast.error('Failed to add entry') }
     setLoading(false)
   }
 
+  const exportCSV = () => {
+    const headers = ['Date', 'Direction', 'Amount', 'Note']
+    const rows = entries.map(e => [e.entry_date, e.direction, e.amount, e.note || ''])
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `kora-cashbook-${Date.now()}.csv`; a.click()
+    URL.revokeObjectURL(url)
+    toast.success('CSV exported!')
+  }
+
   return (
-    <div style={{ padding: '24px', color: '#fff', fontFamily: 'sans-serif' }}>
-      <Toaster />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '22px' }}>Cash Book</h2>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '10px 16px', background: '#7F77DD', color: '#fff',
-            border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px'
-          }}
-        >
-          <Plus size={16} /> Add Entry
-        </button>
-      </div>
+    <div className="page fade-in">
+      <Toaster position="top-center" toastOptions={{
+        style: { background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border2)', fontSize: '13px' }
+      }} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '12px', border: '1px solid #2a2a2a' }}>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '8px' }}>Cash In</p>
-          <p style={{ color: '#1D9E75', fontSize: '22px', fontWeight: '600' }}>
-            PKR {(balance?.total_in || 0).toLocaleString()}
-          </p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Cash Book</h1>
+          <p className="page-subtitle">Track every rupee in and out</p>
         </div>
-        <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '12px', border: '1px solid #2a2a2a' }}>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '8px' }}>Cash Out</p>
-          <p style={{ color: '#D85A30', fontSize: '22px', fontWeight: '600' }}>
-            PKR {(balance?.total_out || 0).toLocaleString()}
-          </p>
-        </div>
-        <div style={{ background: '#1a1a1a', padding: '20px', borderRadius: '12px', border: '1px solid #2a2a2a' }}>
-          <p style={{ color: '#888', fontSize: '13px', marginBottom: '8px' }}>Balance</p>
-          <p style={{ color: '#7F77DD', fontSize: '22px', fontWeight: '600' }}>
-            PKR {(balance?.balance || 0).toLocaleString()}
-          </p>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={exportCSV} className="btn btn-ghost btn-sm">
+            <Download size={13} /> Export
+          </button>
+          <button onClick={() => setShowModal(true)} className="btn btn-primary btn-sm" id="add-cash-entry">
+            <Plus size={13} /> Add Entry
+          </button>
         </div>
       </div>
 
-      <div style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #2a2a2a', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {/* Summary cards */}
+      <div className="grid-3" style={{ marginBottom: '24px' }}>
+        {[
+          { label: 'Cash In', value: balance?.total_in || 0, color: 'var(--green-light)', icon: '↓' },
+          { label: 'Cash Out', value: balance?.total_out || 0, color: 'var(--red-light)', icon: '↑' },
+          { label: 'Balance', value: balance?.balance || 0, color: 'var(--text)', icon: '💰' },
+        ].map(card => (
+          <div key={card.label} className="stat-card">
+            <div className="stat-label">{card.label}</div>
+            <div className="stat-value" style={{ fontSize: '24px', color: card.color }}>
+              PKR {(card.value).toLocaleString()}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="table-wrap">
+        <table>
           <thead>
-            <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
-              {['Date', 'Direction', 'Amount', 'Note'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#666', fontSize: '13px' }}>{h}</th>
-              ))}
+            <tr>
+              <th>Date</th>
+              <th>Direction</th>
+              <th>Amount</th>
+              <th>Note</th>
             </tr>
           </thead>
           <tbody>
             {entries.map(entry => (
-              <tr key={entry.id} style={{ borderBottom: '1px solid #1f1f1f' }}>
-                <td style={{ padding: '12px 16px', color: '#888', fontSize: '13px' }}>{entry.entry_date}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px',
-                    color: entry.direction === 'in' ? '#1D9E75' : '#D85A30'
+              <tr key={entry.id}>
+                <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{entry.entry_date || '—'}</td>
+                <td>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                    fontSize: '12px', fontWeight: '600',
+                    color: entry.direction === 'in' ? 'var(--green-light)' : 'var(--red-light)'
                   }}>
-                    {entry.direction === 'in'
-                      ? <ArrowDownCircle size={14} />
-                      : <ArrowUpCircle size={14} />}
+                    {entry.direction === 'in' ? <ArrowDownCircle size={12} /> : <ArrowUpCircle size={12} />}
                     {entry.direction === 'in' ? 'Cash In' : 'Cash Out'}
                   </span>
                 </td>
-                <td style={{ padding: '12px 16px', fontWeight: '600', fontSize: '14px',
-                  color: entry.direction === 'in' ? '#1D9E75' : '#D85A30'
+                <td style={{
+                  fontWeight: '700', fontFamily: 'monospace',
+                  color: entry.direction === 'in' ? 'var(--green-light)' : 'var(--red-light)'
                 }}>
-                  PKR {parseFloat(entry.amount).toLocaleString()}
+                  {entry.direction === 'in' ? '+' : '-'}PKR {parseFloat(entry.amount).toLocaleString()}
                 </td>
-                <td style={{ padding: '12px 16px', color: '#888', fontSize: '13px' }}>{entry.note || '—'}</td>
+                <td>{entry.note || '—'}</td>
               </tr>
             ))}
             {entries.length === 0 && (
-              <tr>
-                <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#444' }}>
-                  No cash entries yet!
-                </td>
-              </tr>
+              <tr><td colSpan={4}>
+                <div className="empty-state">
+                  <div className="empty-state-icon">💵</div>
+                  <p className="empty-state-text">No cash entries yet</p>
+                  <p className="empty-state-sub">Track your daily cash in and out</p>
+                </div>
+              </td></tr>
             )}
           </tbody>
         </table>
       </div>
 
       {showModal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
-        }}>
-          <div style={{
-            background: '#1a1a1a', padding: '32px', borderRadius: '16px',
-            width: '100%', maxWidth: '400px', border: '1px solid #2a2a2a'
-          }}>
-            <h3 style={{ marginBottom: '24px', fontSize: '18px' }}>New Cash Entry</h3>
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
+          <div className="modal">
+            <h3 style={{ fontSize: '17px', fontWeight: '700', marginBottom: '24px' }}>New Cash Entry</h3>
 
-            <label style={{ color: '#aaa', fontSize: '13px' }}>Direction</label>
-            <select
-              value={form.direction}
-              onChange={e => setForm({ ...form, direction: e.target.value })}
-              style={{ width: '100%', padding: '10px', margin: '8px 0 16px', background: '#2a2a2a', border: '1px solid #333', borderRadius: '8px', color: '#fff', boxSizing: 'border-box' }}
-            >
-              <option value="in">Cash In (Aaya)</option>
-              <option value="out">Cash Out (Gaya)</option>
-            </select>
+            <div className="form-group">
+              <label className="label">Direction</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                {[
+                  { val: 'in', label: '↓ Cash In (Aaya)', color: 'var(--green-light)', bg: 'var(--green-bg)' },
+                  { val: 'out', label: '↑ Cash Out (Gaya)', color: 'var(--red-light)', bg: 'var(--red-bg)' },
+                ].map(t => (
+                  <button key={t.val} onClick={() => setForm({ ...form, direction: t.val })} style={{
+                    padding: '10px', borderRadius: 'var(--radius-sm)',
+                    border: `2px solid ${form.direction === t.val ? t.color : 'var(--border2)'}`,
+                    background: form.direction === t.val ? t.bg : 'transparent',
+                    color: form.direction === t.val ? t.color : 'var(--text2)',
+                    cursor: 'pointer', fontSize: '13px', fontWeight: '600',
+                  }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <label style={{ color: '#aaa', fontSize: '13px' }}>Amount (PKR)</label>
-            <input
-              type="number"
-              placeholder="5000"
-              value={form.amount}
-              onChange={e => setForm({ ...form, amount: e.target.value })}
-              style={{ width: '100%', padding: '10px', margin: '8px 0 16px', background: '#2a2a2a', border: '1px solid #333', borderRadius: '8px', color: '#fff', boxSizing: 'border-box' }}
-            />
+            <div className="form-group">
+              <label className="label">Amount (PKR) *</label>
+              <input type="number" placeholder="5000" value={form.amount}
+                onChange={e => setForm({ ...form, amount: e.target.value })} className="input" autoFocus />
+            </div>
 
-            <label style={{ color: '#aaa', fontSize: '13px' }}>Note</label>
-            <input
-              type="text"
-              placeholder="e.g. Shop ka kiraya"
-              value={form.note}
-              onChange={e => setForm({ ...form, note: e.target.value })}
-              style={{ width: '100%', padding: '10px', margin: '8px 0 16px', background: '#2a2a2a', border: '1px solid #333', borderRadius: '8px', color: '#fff', boxSizing: 'border-box' }}
-            />
+            <div className="form-group">
+              <label className="label">Note</label>
+              <input type="text" placeholder="e.g. Shop ka kiraya" value={form.note}
+                onChange={e => setForm({ ...form, note: e.target.value })} className="input" />
+            </div>
 
-            <label style={{ color: '#aaa', fontSize: '13px' }}>Date</label>
-            <input
-              type="date"
-              value={form.entry_date}
-              onChange={e => setForm({ ...form, entry_date: e.target.value })}
-              style={{ width: '100%', padding: '10px', margin: '8px 0 24px', background: '#2a2a2a', border: '1px solid #333', borderRadius: '8px', color: '#fff', boxSizing: 'border-box' }}
-            />
+            <div className="form-group">
+              <label className="label">Date</label>
+              <input type="date" value={form.entry_date}
+                onChange={e => setForm({ ...form, entry_date: e.target.value })} className="input" />
+            </div>
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => setShowModal(false)}
-                style={{ flex: 1, padding: '12px', background: 'transparent', border: '1px solid #333', borderRadius: '8px', color: '#888', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={addEntry}
-                disabled={loading}
-                style={{ flex: 1, padding: '12px', background: '#7F77DD', border: 'none', borderRadius: '8px', color: '#fff', cursor: 'pointer', fontWeight: '600' }}
-              >
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => setShowModal(false)} className="btn btn-ghost" style={{ flex: 1 }}>Cancel</button>
+              <button onClick={addEntry} disabled={loading} className="btn btn-primary" style={{ flex: 1 }}>
                 {loading ? 'Saving...' : 'Save Entry'}
               </button>
             </div>
