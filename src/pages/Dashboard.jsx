@@ -134,9 +134,9 @@ export default function Dashboard() {
         <div>
           <h1 className="page-title" style={{ fontSize: '28px', letterSpacing: '-0.8px' }}>
             {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'},&nbsp;
-            {(profile?.full_name || 'Seller').split(' ')[0]} 👋
+            {(profile?.full_name || 'Seller').split(' ')[0]}
           </h1>
-          <p className="page-subtitle" style={{ fontSize: '14px', color: 'var(--text3)' }}>Here's what's happening with your business today.</p>
+          <p className="page-subtitle" style={{ fontSize: '14px', color: 'var(--text3)' }}>Business performance overview</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <button onClick={refreshAll} className="btn-icon" title="Refresh Dashboard">
@@ -185,21 +185,26 @@ export default function Dashboard() {
 
       {/* Net Position Summary */}
       <div style={{
-         background: isPositive ? 'rgba(74,222,128,0.03)' : 'rgba(248,113,113,0.03)',
-         border: `1px solid ${isPositive ? 'rgba(74,222,128,0.08)' : 'rgba(248,113,113,0.08)'}`,
-         borderRadius: '16px', padding: '24px', marginBottom: '32px',
+         background: isPositive ? 'rgba(74,222,128,0.02)' : 'rgba(248,113,113,0.02)',
+         border: `1px solid ${isPositive ? 'var(--green-bg)' : 'var(--red-bg)'}`,
+         borderRadius: '20px', padding: '32px', marginBottom: '32px',
          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <div>
-           <p style={{ color: 'var(--text3)', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>ESTIMATED NET VALUE</p>
-           {loadingStats ? <Skeleton height="32px" width="200px" /> : (
-             <h2 style={{ fontSize: '32px', fontWeight: '900', color: isPositive ? 'var(--green-light)' : 'var(--red-light)', letterSpacing: '-1px' }}>
+           <p style={{ color: 'var(--text3)', fontSize: '11px', fontWeight: '800', letterSpacing: '1px', marginBottom: '6px' }}>ESTIMATED NET SURPLUS / DEBT</p>
+           {loadingStats ? <Skeleton height="40px" width="240px" /> : (
+             <h2 style={{ fontSize: '36px', fontWeight: '900', color: isPositive ? 'var(--green-light)' : 'var(--red-light)', letterSpacing: '-1.5px' }}>
                {isPositive ? '+' : ''}{fmt(net)}
              </h2>
            )}
         </div>
-        <div style={{ padding: '16px', background: 'var(--bg2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-          {isPositive ? '🚀 Healthy Balance' : '⚠️ Watch Your Debts'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ padding: '14px', background: 'var(--bg2)', borderRadius: '14px', border: '1px solid var(--border)', color: isPositive ? 'var(--green-light)' : 'var(--red-light)' }}>
+            {isPositive ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
+          </div>
+          <div style={{ padding: '12px 20px', background: 'var(--bg2)', borderRadius: '12px', border: '1px solid var(--border)', fontSize: '12px', fontWeight: '800', letterSpacing: '0.8px' }}>
+            {isPositive ? 'FINANCIAL HEALTH: OPTIMAL' : 'LIQUIDITY WARNING'}
+          </div>
         </div>
       </div>
 
