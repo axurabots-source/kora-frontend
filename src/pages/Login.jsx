@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import toast, { Toaster } from 'react-hot-toast'
 import { Eye, EyeOff, Mail, Lock, User, ArrowRight, CheckCircle2 } from 'lucide-react'
@@ -48,7 +48,7 @@ export default function Login() {
       if (error) {
         if (error.message.includes('User already registered')) {
           toast.error('Account already exists with this email. Try signing in!')
-          setMode('login') // Automatically switch to login mode for them
+          setMode('login') 
         } else {
           toast.error(error.message)
         }
@@ -83,8 +83,7 @@ export default function Login() {
       })
       if (error) throw error
     } catch (err) {
-      toast.error('Google login requires setup in your Supabase Dashboard (Auth -> Providers)')
-      console.error(err)
+      toast.error('Google login requires setup in your Supabase Dashboard')
     }
   }
 
@@ -96,28 +95,17 @@ export default function Login() {
           <CheckCircle2 size={64} color="var(--green-light)" style={{ marginBottom: '24px' }} />
           <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text)', marginBottom: '12px' }}>Verify your email</h2>
           <p style={{ fontSize: '15px', color: 'var(--text2)', lineHeight: '1.6', marginBottom: '32px' }}>
-            We've sent a confirmation link to <strong style={{color: 'var(--text)'}}>{email}</strong>. Please check your inbox (and spam folder) to activate your account.
+            We've sent a confirmation link to <strong style={{color: 'var(--text)'}}>{email}</strong>. Check your inbox to activate your account.
           </p>
-          <button onClick={() => setSuccessMode(false)} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-            Back to Login
-          </button>
+          <button onClick={() => setSuccessMode(false)} className="btn btn-primary btn-lg" style={{ width: '100%' }}>Back to Login</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-    }}>
-      <Toaster position="top-center" toastOptions={{
-        style: { background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border2)', fontSize: '13px' }
-      }} />
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <Toaster position="top-center" toastOptions={{ style: { background: 'var(--bg2)', color: 'var(--text)', border: '1px solid var(--border2)', fontSize: '13px' } }} />
 
       {/* Left Branding */}
       <div style={{ flex: 1, maxWidth: '480px', padding: '48px', display: 'flex', flexDirection: 'column', gap: '32px' }} className="desktop-only">
@@ -201,11 +189,7 @@ export default function Login() {
 
         <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text2)', marginTop: '24px' }}>
           {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
-          <button 
-            type="button"
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setLoading(false); }}
-            style={{ background: 'none', border: 'none', color: 'var(--green-light)', fontWeight: '700', cursor: 'pointer', padding: 0 }}
-          >
+          <button type="button" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setLoading(false); }} style={{ background: 'none', border: 'none', color: 'var(--green-light)', fontWeight: '700', cursor: 'pointer', padding: 0 }}>
             {mode === 'login' ? 'Create one' : 'Sign in'}
           </button>
         </p>

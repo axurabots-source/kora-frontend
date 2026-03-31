@@ -21,9 +21,9 @@ import WhatsAppParser from './pages/WhatsAppParser'
 import EcomSummary from './pages/EcomSummary'
 
 const Layout = ({ children }) => (
-  <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+  <div className="main-layout">
     <Sidebar />
-    <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
+    <div className="content-wrap">
       {children}
     </div>
   </div>

@@ -7,11 +7,15 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid
 } from 'recharts'
-import { TrendingUp, TrendingDown, Wallet, Plus, ArrowRight, RefreshCw } from 'lucide-react'
+import { TrendingUp, TrendingDown, Wallet, Plus, ArrowRight, RefreshCw, Users, ShoppingBag } from 'lucide-react'
 
 const API = import.meta.env.VITE_API_URL
-
 const fmt = n => 'PKR ' + (n || 0).toLocaleString()
+
+// Reuseable Skeleton Component
+const Skeleton = ({ width, height, style }) => (
+  <div className="skeleton" style={{ width, height, borderRadius: '8px', ...style }} />
+)
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -21,16 +25,31 @@ export default function Dashboard() {
   const [selectedBusiness, setSelectedBusiness] = useState(null)
   const [recentEntries, setRecentEntries] = useState([])
   const [topParties, setTopParties] = useState([])
-  const [loading, setLoading] = useState(true)
+  
+  // Individual loading states for better UX
+  const [loadingStats, setLoadingStats] = useState(true)
+  const [loadingEntries, setLoadingEntries] = useState(true)
+  const [loadingParties, setLoadingParties] = useState(true)
 
   useEffect(() => { if (profile) fetchBusinesses() }, [profile])
+
   useEffect(() => {
     if (selectedBusiness) {
-      setLoading(true)
-      Promise.all([fetchSummary(), fetchBalance(), fetchRecent(), fetchTopParties()])
-        .finally(() => setLoading(false))
+      refreshAll()
     }
   }, [selectedBusiness])
+
+  const refreshAll = () => {
+    setLoadingStats(true)
+    setLoadingEntries(true)
+    setLoadingParties(true)
+    
+    // Fetch everything independently so fast APIs don't wait for slow ones
+    fetchSummary()
+    fetchBalance()
+    fetchRecent()
+    fetchTopParties()
+  }
 
   const getToken = async () => {
     const { data } = await supabase.auth.getSession()
@@ -50,7 +69,9 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setSummary(data)
-    } catch {}
+    } finally {
+      setLoadingStats(false)
+    }
   }
 
   const fetchBalance = async () => {
@@ -60,7 +81,9 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setBalance(data)
-    } catch {}
+    } finally {
+      // Shared with summary for the main stat cards
+    }
   }
 
   const fetchRecent = async () => {
@@ -70,7 +93,9 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setRecentEntries((data || []).slice(0, 5))
-    } catch {}
+    } finally {
+      setLoadingEntries(false)
+    }
   }
 
   const fetchTopParties = async () => {
@@ -80,7 +105,9 @@ export default function Dashboard() {
         headers: { Authorization: `Bearer ${token}` }
       })
       setTopParties((data || []).slice(0, 5))
-    } catch {}
+    } finally {
+      setLoadingParties(false)
+    }
   }
 
   const net = (summary?.total_receivable || 0) - (summary?.total_payable || 0)
@@ -91,55 +118,43 @@ export default function Dashboard() {
     { name: 'Payable', value: summary?.total_payable || 0 },
     { name: 'Cash', value: balance?.balance || 0 },
   ]
-  const PIE_COLORS = ['#4ade80', '#f87171', '#888888']
+  const PIE_COLORS = ['#4ade80', '#f87171', '#60a5fa']
 
   const barData = [
-    { name: 'Cash In', value: balance?.total_in || 0, fill: '#4ade80' },
-    { name: 'Cash Out', value: balance?.total_out || 0, fill: '#f87171' },
-    { name: 'Receivable', value: summary?.total_receivable || 0, fill: '#60a5fa' },
-    { name: 'Payable', value: summary?.total_payable || 0, fill: '#a78bfa' },
+    { name: 'In', value: balance?.total_in || 0, fill: '#4ade80' },
+    { name: 'Out', value: balance?.total_out || 0, fill: '#f87171' },
+    { name: 'Lena', value: summary?.total_receivable || 0, fill: '#60a5fa' },
+    { name: 'Dena', value: summary?.total_payable || 0, fill: '#a78bfa' },
   ]
-
-  if (loading && !summary) {
-    return (
-      <div className="page">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} className="stat-card" style={{ height: '100px' }}>
-              <div className="skeleton" style={{ height: '12px', width: '60px', marginBottom: '12px' }} />
-              <div className="skeleton" style={{ height: '28px', width: '120px' }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="page fade-in">
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '32px' }}>
         <div>
-          <h1 className="page-title">
-            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'},&nbsp;
+          <h1 className="page-title" style={{ fontSize: '28px', letterSpacing: '-0.8px' }}>
+            {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'},&nbsp;
             {(profile?.full_name || 'Seller').split(' ')[0]} 👋
           </h1>
-          <p className="page-subtitle">Here's your business snapshot for today</p>
+          <p className="page-subtitle" style={{ fontSize: '14px', color: 'var(--text3)' }}>Here's what's happening with your business today.</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button onClick={refreshAll} className="btn-icon" title="Refresh Dashboard">
+            <RefreshCw size={16} className={loadingStats ? 'spin' : ''} />
+          </button>
           {businesses.length > 1 && (
             <select
               value={selectedBusiness || ''}
               onChange={e => setSelectedBusiness(e.target.value)}
               className="input"
-              style={{ width: 'auto', padding: '8px 12px' }}
+              style={{ width: 'auto', padding: '10px 16px', background: 'var(--bg2)', border: '1px solid var(--border)' }}
             >
               {businesses.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           )}
           <Link to="/ledger">
-            <button className="btn btn-primary" id="dash-add-entry">
-              <Plus size={14} /> Add Entry
+            <button className="btn btn-primary" style={{ padding: '10px 20px' }}>
+              <Plus size={16} /> <span className="desktop-only">Add Entry</span>
             </button>
           </Link>
         </div>
@@ -147,162 +162,113 @@ export default function Dashboard() {
 
       {/* Stats Row */}
       <div className="grid-3" style={{ marginBottom: '24px' }}>
-        <div className="stat-card">
-          <div className="stat-label">Receivable (Lena Hai)</div>
-          <div className="stat-value" style={{ color: 'var(--green-light)' }}>
-            {fmt(summary?.total_receivable)}
+        {[
+          { label: 'Receivable (Lena Hai)', val: summary?.total_receivable, color: 'var(--green-light)', icon: <TrendingUp size={12}/>, badge: 'badge-green', tag: 'INCOMING' },
+          { label: 'Payable (Dena Hai)', val: summary?.total_payable, color: 'var(--red-light)', icon: <TrendingDown size={12}/>, badge: 'badge-red', tag: 'OUTGOING' },
+          { label: 'Cash in Hand', val: balance?.balance, color: 'var(--text)', icon: <Wallet size={12}/>, badge: 'badge-gray', tag: 'LIQUID' },
+        ].map((s, i) => (
+          <div key={i} className="stat-card" style={{ position: 'relative', overflow: 'hidden' }}>
+            <div className="stat-label" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</div>
+            {loadingStats ? (
+              <Skeleton height="32px" width="70%" style={{ marginTop: '8px', marginBottom: '8px' }} />
+            ) : (
+              <div className="stat-value" style={{ color: s.color, fontSize: '28px', fontWeight: '800' }}>{fmt(s.val)}</div>
+            )}
+            <div className="stat-sub">
+              {loadingStats ? <Skeleton height="16px" width="40%" /> : (
+                <span className={`badge ${s.badge}`} style={{ fontSize: '10px', fontWeight: '700' }}>{s.icon} {s.tag}</span>
+              )}
+            </div>
           </div>
-          <div className="stat-sub">
-            <span className="badge badge-green"><TrendingUp size={9} /> Incoming</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-label">Payable (Dena Hai)</div>
-          <div className="stat-value" style={{ color: 'var(--red-light)' }}>
-            {fmt(summary?.total_payable)}
-          </div>
-          <div className="stat-sub">
-            <span className="badge badge-red"><TrendingDown size={9} /> Outgoing</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-label">Cash in Hand</div>
-          <div className="stat-value">{fmt(balance?.balance)}</div>
-          <div className="stat-sub">
-            <span className="badge badge-gray"><Wallet size={9} /> Available</span>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* Net Position Banner */}
+      {/* Net Position Summary */}
       <div style={{
-        background: isPositive ? 'var(--green-bg)' : 'var(--red-bg)',
-        border: `1px solid ${isPositive ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'}`,
-        borderRadius: 'var(--radius)',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '24px',
+         background: isPositive ? 'rgba(74,222,128,0.03)' : 'rgba(248,113,113,0.03)',
+         border: `1px solid ${isPositive ? 'rgba(74,222,128,0.08)' : 'rgba(248,113,113,0.08)'}`,
+         borderRadius: '16px', padding: '24px', marginBottom: '32px',
+         display: 'flex', alignItems: 'center', justifyContent: 'space-between'
       }}>
         <div>
-          <p style={{ fontSize: '11px', fontWeight: '700', color: isPositive ? 'var(--green-light)' : 'var(--red-light)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>
-            Net Position
-          </p>
-          <p style={{ fontSize: '28px', fontWeight: '800', color: isPositive ? 'var(--green-light)' : 'var(--red-light)', letterSpacing: '-1px' }}>
-            {isPositive ? '+' : ''}{fmt(net)}
-          </p>
+           <p style={{ color: 'var(--text3)', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>ESTIMATED NET VALUE</p>
+           {loadingStats ? <Skeleton height="32px" width="200px" /> : (
+             <h2 style={{ fontSize: '32px', fontWeight: '900', color: isPositive ? 'var(--green-light)' : 'var(--red-light)', letterSpacing: '-1px' }}>
+               {isPositive ? '+' : ''}{fmt(net)}
+             </h2>
+           )}
         </div>
-        <div style={{ fontSize: '32px' }}>{isPositive ? '📈' : '📉'}</div>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid-2" style={{ marginBottom: '24px' }}>
-        {/* Pie Chart */}
-        <div className="card">
-          <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)', marginBottom: '16px' }}>Balance Overview</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={58}
-                outerRadius={82}
-                dataKey="value"
-                paddingAngle={3}
-              >
-                {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} strokeWidth={0} />)}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--bg2)',
-                  border: '1px solid var(--border2)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: 'var(--text)',
-                }}
-                formatter={v => ['PKR ' + v.toLocaleString()]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '8px' }}>
-            {pieData.map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: PIE_COLORS[i], flexShrink: 0 }} />
-                <span style={{ color: 'var(--text2)', fontSize: '11px' }}>{item.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bar Chart */}
-        <div className="card">
-          <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)', marginBottom: '16px' }}>Cash Flow Summary</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={barData} barSize={28}>
-              <CartesianGrid vertical={false} stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
-              <YAxis hide />
-              <Tooltip
-                contentStyle={{
-                  background: 'var(--bg2)',
-                  border: '1px solid var(--border2)',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: 'var(--text)',
-                }}
-                formatter={v => ['PKR ' + v.toLocaleString()]}
-              />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {barData.map((d, i) => <Cell key={i} fill={d.fill} opacity={0.85} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div style={{ padding: '16px', background: 'var(--bg2)', borderRadius: '12px', border: '1px solid var(--border)' }}>
+          {isPositive ? '🚀 Healthy Balance' : '⚠️ Watch Your Debts'}
         </div>
       </div>
 
-      {/* Bottom Row */}
+      {/* Main Charts - Only show when first data hits */}
+      <div className="grid-2" style={{ marginBottom: '32px' }}>
+        <div className="card" style={{ padding: '24px' }}>
+           <p style={{ fontSize: '14px', fontWeight: '700', marginBottom: '24px' }}>Business Composition</p>
+           {loadingStats ? <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="spin" color="var(--border)" /></div> : (
+             <ResponsiveContainer width="100%" height={200}>
+               <PieChart>
+                 <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} dataKey="value" paddingAngle={4}>
+                   {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} strokeWidth={0} />)}
+                 </Pie>
+                 <Tooltip contentStyle={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: '12px', color: 'var(--text)' }} formatter={v => [fmt(v)]} />
+               </PieChart>
+             </ResponsiveContainer>
+           )}
+           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '16px' }}>
+             {pieData.map((item, i) => (
+               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: PIE_COLORS[i] }} />
+                 <span style={{ color: 'var(--text3)', fontSize: '11px', fontWeight: '600' }}>{item.name}</span>
+               </div>
+             ))}
+           </div>
+        </div>
+
+        <div className="card" style={{ padding: '24px' }}>
+           <p style={{ fontSize: '14px', fontWeight: '700', marginBottom: '24px' }}>Cash Flow Comparison</p>
+           {loadingStats ? <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshCw className="spin" color="var(--border)" /></div> : (
+             <ResponsiveContainer width="100%" height={220}>
+               <BarChart data={barData} barSize={32}>
+                 <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" />
+                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text3)' }} axisLine={false} tickLine={false} />
+                 <Tooltip contentStyle={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderRadius: '12px' }} formatter={v => [fmt(v)]} />
+                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                   {barData.map((d, i) => <Cell key={i} fill={d.fill} opacity={0.9} />)}
+                 </Bar>
+               </BarChart>
+             </ResponsiveContainer>
+           )}
+        </div>
+      </div>
+
+      {/* Detailed Lists */}
       <div className="grid-2">
-        {/* Recent Entries */}
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)' }}>Recent Entries</p>
-            <Link to="/ledger" style={{ fontSize: '12px', color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              View all <ArrowRight size={11} />
-            </Link>
-          </div>
-          {recentEntries.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">📝</div>
-              <p className="empty-state-text">No entries yet</p>
-              <p className="empty-state-sub">Add your first ledger entry</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+               <div style={{ padding: '8px', background: 'rgba(96, 165, 250, 0.1)', color: '#60a5fa', borderRadius: '8px' }}><ShoppingBag size={14}/></div>
+               <p style={{ fontSize: '14px', fontWeight: '700' }}>Recent Activity</p>
             </div>
+            <Link to="/ledger" className="btn-text">View all <ArrowRight size={14} /></Link>
+          </div>
+          
+          {loadingEntries ? (
+            [1,2,3].map(i => <Skeleton key={i} height="52px" style={{ marginBottom: '8px' }} />)
+          ) : recentEntries.length === 0 ? (
+            <div className="empty-state">No entries yet</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {recentEntries.map(e => (
-                <div key={e.id} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  background: 'var(--bg3)',
-                }}>
+                <div key={e.id} className="list-item" style={{ background: 'var(--bg3)', border: '1px solid var(--border2)' }}>
                   <div>
-                    <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: '500' }}>
-                      {e.parties?.name || 'General'}
-                    </p>
-                    <p style={{ fontSize: '11px', color: 'var(--text3)' }}>{e.entry_date}</p>
+                    <p style={{ fontSize: '13px', fontWeight: '600' }}>{e.parties?.name || 'Cash Entry'}</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text3)' }}>{new Date(e.entry_date).toLocaleDateString()}</p>
                   </div>
-                  <span style={{
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    color: e.entry_type === 'receivable' ? 'var(--green-light)' : 'var(--red-light)'
-                  }}>
-                    {e.entry_type === 'receivable' ? '+' : '-'}PKR {parseFloat(e.amount).toLocaleString()}
+                  <span style={{ fontWeight: '800', color: e.entry_type === 'receivable' ? 'var(--green-light)' : 'var(--red-light)' }}>
+                    {e.entry_type === 'receivable' ? '+' : '-'}{parseFloat(e.amount).toLocaleString()}
                   </span>
                 </div>
               ))}
@@ -310,55 +276,33 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Top Parties */}
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text)' }}>Parties</p>
-            <Link to="/parties" style={{ fontSize: '12px', color: 'var(--text2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              View all <ArrowRight size={11} />
-            </Link>
-          </div>
-          {topParties.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">👥</div>
-              <p className="empty-state-text">No parties yet</p>
-              <p className="empty-state-sub">Add customers and suppliers</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+               <div style={{ padding: '8px', background: 'rgba(167, 139, 250, 0.1)', color: '#a78bfa', borderRadius: '8px' }}><Users size={14}/></div>
+               <p style={{ fontSize: '14px', fontWeight: '700' }}>Key Contacts</p>
             </div>
+            <Link to="/parties" className="btn-text">Manage <ArrowRight size={14} /></Link>
+          </div>
+
+          {loadingParties ? (
+             [1,2,3].map(i => <Skeleton key={i} height="52px" style={{ marginBottom: '8px' }} />)
+          ) : topParties.length === 0 ? (
+            <div className="empty-state">No parties yet</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {topParties.map(p => (
-                <div key={p.id} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  background: 'var(--bg3)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                      width: '30px',
-                      height: '30px',
-                      borderRadius: '50%',
-                      background: 'var(--bg4)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '13px',
-                      fontWeight: '700',
-                      color: 'var(--text2)',
-                      flexShrink: 0,
-                    }}>
-                      {p.name?.[0]?.toUpperCase()}
+                <div key={p.id} className="list-item" style={{ background: 'var(--bg3)', border: '1px solid var(--border2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '900' }}>
+                      {p.name?.[0]}
                     </div>
                     <div>
-                      <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: '500' }}>{p.name}</p>
-                      <p style={{ fontSize: '11px', color: 'var(--text3)' }}>{p.phone || 'No phone'}</p>
+                      <p style={{ fontSize: '13px', fontWeight: '600' }}>{p.name}</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text3)' }}>{p.type.toUpperCase()}</p>
                     </div>
                   </div>
-                  <span className={`badge ${p.type === 'customer' ? 'badge-green' : 'badge-red'}`}>
-                    {p.type === 'customer' ? 'Customer' : 'Supplier'}
-                  </span>
+                  <ArrowRight size={14} color="var(--border)" />
                 </div>
               ))}
             </div>
