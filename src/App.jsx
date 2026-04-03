@@ -2,7 +2,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { Toaster } from 'react-hot-toast'
-import Sidebar from './components/Sidebar'
+import { ProtectedRoute } from './layouts/MainLayout'
+
+// Styles
+import './styles/index.css'
 
 // Khata pages
 import Login from './pages/Login'
@@ -20,21 +23,6 @@ import ShipmentQueue from './pages/ShipmentQueue'
 import WhatsAppParser from './pages/WhatsAppParser'
 import EcomSummary from './pages/EcomSummary'
 
-const Layout = ({ children }) => (
-  <div className="main-layout">
-    <Sidebar />
-    <div className="content-wrap">
-      {children}
-    </div>
-  </div>
-)
-
-const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth()
-  if (!user) return <Navigate to="/login" />
-  return <Layout>{children}</Layout>
-}
-
 const AppRoutes = () => {
   const { user } = useAuth()
   return (
@@ -51,9 +39,9 @@ const AppRoutes = () => {
       <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
 
       {/* Ecom */}
-      <Route path="/store" element={<ProtectedRoute><StoreConnect /></ProtectedRoute>} />
+      <Route path="/store-connect" element={<ProtectedRoute><StoreConnect /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-      <Route path="/shipments" element={<ProtectedRoute><ShipmentQueue /></ProtectedRoute>} />
+      <Route path="/shipment-queue" element={<ProtectedRoute><ShipmentQueue /></ProtectedRoute>} />
       <Route path="/whatsapp" element={<ProtectedRoute><WhatsAppParser /></ProtectedRoute>} />
       <Route path="/ecom-summary" element={<ProtectedRoute><EcomSummary /></ProtectedRoute>} />
 
@@ -71,6 +59,7 @@ export default function App() {
           <Toaster
             position="top-center"
             toastOptions={{
+              className: 'dark:bg-bg2 dark:text-text dark:border-border2',
               style: {
                 background: 'var(--bg2)',
                 color: 'var(--text)',
