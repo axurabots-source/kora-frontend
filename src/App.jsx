@@ -15,6 +15,7 @@ import Parties from './pages/Parties'
 import CashBook from './pages/CashBook'
 import Admin from './pages/Admin'
 import CreateBusiness from './pages/CreateBusiness'
+import Settings from './pages/Settings'
 
 // Ecom pages
 import StoreConnect from './pages/StoreConnect'
@@ -36,6 +37,7 @@ const AppRoutes = () => {
       <Route path="/parties" element={<ProtectedRoute><Parties /></ProtectedRoute>} />
       <Route path="/cash" element={<ProtectedRoute><CashBook /></ProtectedRoute>} />
       <Route path="/create-business" element={<ProtectedRoute><CreateBusiness /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
 
       {/* Ecom */}

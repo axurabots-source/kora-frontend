@@ -7,29 +7,68 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
+  const [otpMode, setOtpMode] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [successMode, setSuccessMode] = useState(false)
+  
+  // Forgot Password Flow
+  const [forgotFlow, setForgotFlow] = useState(0) // 0: off, 1: enter email, 2: enter code, 3: enter new password
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotCode, setForgotCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
 
   const handleAuth = async (e) => {
     e?.preventDefault()
     if (!email) return toast.error('Work email required')
-    if (!password) return toast.error('Security credential required')
-    if (mode === 'signup' && !name) return toast.error('Legal name required')
     
     setLoading(true)
+
+    if (otpMode) {
+      if (!otpCode) {
+        setLoading(false)
+        return toast.error('Numeric security code is required.')
+      }
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpCode,
+        type: 'signup' // or magiclink
+      })
+
+      if (error) {
+         toast.error(error.message)
+      } else {
+         toast.success('Authentication clearance granted')
+      }
+      setLoading(false)
+      return
+    }
+
     if (mode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) toast.error(error.message)
       else toast.success('Authentication clearance granted')
     } else {
+      if (!name) {
+        setLoading(false)
+        return toast.error('Legal name required')
+      }
+      if (!password) {
+        setLoading(false)
+         return toast.error('Security credential required')
+      }
       const { data, error } = await supabase.auth.signUp({
         email, password, options: { data: { full_name: name }, emailRedirectTo: window.location.origin }
       })
       if (error) toast.error(error.message)
       else if (data.session) toast.success('Account provisioned')
-      else setSuccessMode(true)
+      else {
+        setOtpMode(true)
+        toast.success('A 6-digit numeric verification code has been dispatched. Enter it below to grant clearance.')
+      }
     }
     setLoading(false)
   }
@@ -39,6 +78,40 @@ export default function Login() {
       provider: 'google', options: { redirectTo: window.location.origin }
     })
     if (error) toast.error(error.message)
+  }
+
+  const handleForgotPassSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+
+    if (forgotFlow === 1) {
+      if (!forgotEmail) { setLoading(false); return toast.error('Email required') }
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail)
+      if (error) toast.error(error.message)
+      else {
+        toast.success('6-digit code sent to your email')
+        setForgotFlow(2)
+      }
+    } 
+    else if (forgotFlow === 2) {
+      if (!forgotCode) { setLoading(false); return toast.error('Code required') }
+      const { error } = await supabase.auth.verifyOtp({ email: forgotEmail, token: forgotCode, type: 'recovery' })
+      if (error) toast.error('Invalid code')
+      else {
+        toast.success('Code confirmed, enter new password')
+        setForgotFlow(3)
+      }
+    } 
+    else if (forgotFlow === 3) {
+      if (!newPassword) { setLoading(false); return toast.error('Password required') }
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) toast.error(error.message)
+      else {
+        toast.success('Password changed securely! You can now login.')
+        setForgotFlow(0)
+      }
+    }
+    setLoading(false)
   }
 
   if (successMode) {
@@ -110,62 +183,155 @@ export default function Login() {
               <div className="w-1.5 h-1.5 rounded-full bg-green-light animate-pulse" />
             </div>
             <h2 className="text-4xl font-black text-white tracking-tight mb-2">
-              {mode === 'login' ? 'System Access' : 'Create Credentials'}
+              {forgotFlow > 0 ? 'Recover Password' : (mode === 'login' ? 'System Access' : 'Create Credentials')}
             </h2>
             <p className="text-[10px] text-text3 font-black uppercase tracking-[0.3em] opacity-40">Enterprise Authorization Environment</p>
           </div>
 
+          {forgotFlow > 0 ? (
+            <form onSubmit={handleForgotPassSubmit} className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+               {forgotFlow === 1 && (
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Account Email</label>
+                   <input 
+                     type="email" 
+                     placeholder="name@company.com" 
+                     value={forgotEmail} 
+                     onChange={e => setForgotEmail(e.target.value)} 
+                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl px-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                     autoFocus
+                   />
+                 </div>
+               )}
+               {forgotFlow === 2 && (
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Numeric Identity Code</label>
+                   <input 
+                     type="text" 
+                     placeholder="------" 
+                     maxLength={6}
+                     value={forgotCode} 
+                     onChange={e => setForgotCode(e.target.value.replace(/[^0-9]/g, ''))} 
+                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl px-6 text-xl tracking-[0.5em] text-center font-black text-white outline-none transition-all shadow-inner" 
+                     autoFocus
+                   />
+                   <p className="text-[10px] text-blue font-bold text-center pt-2">Enter the 6-digit code dispatched to your inbox.</p>
+                 </div>
+               )}
+               {forgotFlow === 3 && (
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">New Password</label>
+                   <input 
+                     type="password" 
+                     placeholder="••••••••" 
+                     value={newPassword} 
+                     onChange={e => setNewPassword(e.target.value)} 
+                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl px-6 text-sm font-bold text-white outline-none transition-all shadow-inner" 
+                     autoFocus
+                   />
+                 </div>
+               )}
+
+               <div className="flex gap-4">
+                 <button 
+                   type="button" 
+                   onClick={() => setForgotFlow(0)} 
+                   disabled={loading}
+                   className="flex-1 h-16 bg-bg text-text3 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:text-white transition-colors"
+                 >
+                   Cancel
+                 </button>
+                 <button 
+                   type="submit" 
+                   disabled={loading} 
+                   className="flex-1 h-16 bg-white text-black rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center transition-all shadow-xl shadow-white/5"
+                 >
+                   {loading ? 'Processing...' : (forgotFlow === 3 ? 'Save Password' : 'Confirm')}
+                 </button>
+               </div>
+            </form>
+          ) : (
           <form onSubmit={handleAuth} className="space-y-6">
-            {mode === 'signup' && (
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Legal Identity</label>
-                <div className="relative">
-                  <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><User size={18} /></div>
-                  <input 
-                    type="text" 
-                    placeholder="Authorized User Name" 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
-                  />
-                </div>
+            {otpMode ? (
+              <div className="space-y-4 animate-in slide-in-from-right-4">
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Numeric Identity Code</label>
+                   <div className="relative">
+                     <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><ShieldCheck size={18} /></div>
+                     <input 
+                       type="text" 
+                       placeholder="------" 
+                       maxLength={6}
+                       value={otpCode} 
+                       onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))} 
+                       className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-xl tracking-[0.5em] text-center font-black text-white outline-none transition-all shadow-inner" 
+                     />
+                   </div>
+                   <p className="text-[10px] text-blue font-bold text-center pt-2">Enter the 6-digit code dispatched to your inbox.</p>
+                 </div>
               </div>
+            ) : (
+             <>
+               {mode === 'signup' && (
+                 <div className="space-y-2 group">
+                   <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Legal Identity</label>
+                   <div className="relative">
+                     <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><User size={18} /></div>
+                     <input 
+                       type="text" 
+                       placeholder="Authorized User Name" 
+                       value={name} 
+                       onChange={e => setName(e.target.value)} 
+                       className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                     />
+                   </div>
+                 </div>
+               )}
+
+               <div className="space-y-2 group">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Secure Email</label>
+                 <div className="relative">
+                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><Mail size={18} /></div>
+                   <input 
+                     type="email" 
+                     placeholder="name@company.com" 
+                     value={email} 
+                     onChange={e => setEmail(e.target.value)} 
+                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                     disabled={otpMode}
+                   />
+                 </div>
+               </div>
+
+               <div className="space-y-2 group">
+                 <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Password Key</label>
+                 <div className="relative">
+                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><Lock size={18} /></div>
+                   <input 
+                     type={showPassword ? 'text' : 'password'} 
+                     placeholder="••••••••" 
+                     value={password} 
+                     onChange={e => setPassword(e.target.value)} 
+                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-14 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                   />
+                   <button 
+                     type="button" 
+                     onClick={() => setShowPassword(!showPassword)} 
+                     className="absolute right-5 top-1/2 -translate-y-1/2 text-text3 hover:text-white transition-colors"
+                   >
+                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                   </button>
+                 </div>
+                 {mode === 'login' && (
+                   <div className="text-right pt-2">
+                     <button type="button" onClick={() => { setForgotFlow(1); setForgotEmail(email); }} className="text-[10px] text-blue font-bold tracking-widest uppercase hover:text-white transition-colors">
+                       Forget Password?
+                     </button>
+                   </div>
+                 )}
+               </div>
+             </>
             )}
-
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Secure Email</label>
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><Mail size={18} /></div>
-                <input 
-                  type="email" 
-                  placeholder="name@company.com" 
-                  value={email} 
-                  onChange={e => setEmail(e.target.value)} 
-                  className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2 group">
-              <label className="text-[10px] font-black uppercase tracking-widest text-text3 ml-1">Password Key</label>
-              <div className="relative">
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-text3 group-focus-within:text-white transition-colors"><Lock size={18} /></div>
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  placeholder="••••••••" 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-14 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)} 
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-text3 hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
 
             <button 
               type="submit" 
@@ -185,6 +351,7 @@ export default function Login() {
               )}
             </button>
           </form>
+          )}
 
           {/* Social Auth Separator */}
           <div className="my-10 flex items-center gap-6">

@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { 
-  LayoutDashboard, BookOpen, Users, Wallet, LogOut, 
+import {
+  LayoutDashboard, BookOpen, Users, Wallet, LogOut,
   ShoppingCart, MessageSquare, BarChart2, User, Settings,
   Shield, Truck, Link2, Zap, ChevronRight, Menu
 } from 'lucide-react'
@@ -14,8 +14,8 @@ const NavItem = ({ to, icon, label, end }) => {
       end={end}
       className={({ isActive }) => `
         group flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 relative overflow-hidden
-        ${isActive 
-          ? 'bg-bg3 text-white shadow-xl shadow-black/20 border border-white/5 font-black' 
+        ${isActive
+          ? 'bg-bg3 text-white shadow-xl shadow-black/20 border border-white/5 font-black'
           : 'text-text3 hover:text-white hover:bg-white/[0.03] font-bold'}
       `}
     >
@@ -49,7 +49,7 @@ const TabItem = ({ to, icon, label, end }) => {
       {({ isActive }) => (
         <>
           <div className={`p-2 rounded-xl transition-all ${isActive ? 'bg-bg3 shadow-lg shadow-black/40 border border-white/10' : ''}`}>
-             <span className={isActive ? 'text-blue' : 'opacity-60'}>{icon}</span>
+            <span className={isActive ? 'text-blue' : 'opacity-60'}>{icon}</span>
           </div>
           <span className={`text-[8px] font-black uppercase tracking-widest transition-all ${isActive ? 'opacity-100 scale-100' : 'opacity-40 scale-90'}`}>
             {label}
@@ -89,7 +89,8 @@ export default function Sidebar() {
   ]
 
   const systemLinks = [
-     { to: '/admin', icon: <Shield size={18} />, label: 'Root Control' },
+    { to: '/settings', icon: <User size={18} />, label: 'Profile' },
+    { to: '/admin', icon: <Shield size={18} />, label: 'Root Control' },
   ]
 
   return (
@@ -102,10 +103,10 @@ export default function Sidebar() {
             <Zap size={120} strokeWidth={1} />
           </div>
           <div className="flex items-center gap-3 mb-1">
-             <div className="w-8 h-8 rounded-xl bg-blue/10 flex items-center justify-center text-blue shadow-lg shadow-blue/5 border border-blue/20">
-                <Zap size={16} fill="currentColor" />
-             </div>
-             <p className="text-2xl font-black text-white tracking-tighter">KORA<span className="text-blue">.</span></p>
+            <div className="w-8 h-8 rounded-xl bg-blue/10 flex items-center justify-center text-blue shadow-lg shadow-blue/5 border border-blue/20">
+              <Zap size={16} fill="currentColor" />
+            </div>
+            <p className="text-2xl font-black text-white tracking-tighter">KORA<span className="text-blue">.</span></p>
           </div>
           <p className="text-[9px] font-black text-text3 uppercase tracking-[0.4em] ml-1 opacity-60">Operations OS</p>
         </div>
@@ -129,22 +130,25 @@ export default function Sidebar() {
         {/* User / Logout Section */}
         <div className="p-6 bg-bg2/40 border-t border-border mt-auto backdrop-blur-sm group/user">
           <div className="flex items-center gap-4 bg-bg3/50 p-4 rounded-[1.5rem] border border-white/5 shadow-inner transition-all hover:bg-bg3 hover:border-white/10 relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover/user:scale-110 transition-transform">
-                <User size={40} />
-             </div>
-             <div className="w-10 h-10 rounded-2xl bg-bg border border-border flex items-center justify-center text-sm font-black text-white shadow-xl relative z-10 overflow-hidden">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'K'}
-                <div className="absolute inset-0 bg-blue/10 animate-pulse" />
-             </div>
-             <div className="flex-1 min-w-0 relative z-10">
-                <p className="text-xs font-black text-white tracking-tight truncate leading-none mb-1">{profile?.full_name || 'Authorized Seller'}</p>
-                <button 
-                  onClick={signOut} 
-                  className="text-[9px] font-black uppercase tracking-widest text-red-light opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1.5"
-                >
-                  <LogOut size={10} strokeWidth={3} /> Terminate Session
-                </button>
-             </div>
+            <div className="absolute top-0 right-0 p-4 opacity-[0.05] group-hover/user:scale-110 transition-transform">
+              <User size={40} />
+            </div>
+            <div className="w-10 h-10 rounded-2xl bg-bg border border-border flex items-center justify-center text-sm font-black text-white shadow-xl relative z-10 overflow-hidden">
+              {(profile?.avatar_url || user?.user_metadata?.avatar_url) ? (
+                <img src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <>{(profile?.full_name || user?.user_metadata?.full_name || 'U').split(' ').map(n => n[0]).join('').substring(0, 2)}</>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 relative z-10">
+              <p className="text-xs font-black text-white tracking-tight truncate leading-none mb-1">{profile?.full_name || user?.user_metadata?.full_name || 'Authorized User'}</p>
+              <button
+                onClick={signOut}
+                className="text-[9px] font-black uppercase tracking-widest text-red-light opacity-60 hover:opacity-100 transition-opacity flex items-center gap-1.5"
+              >
+                <LogOut size={10} strokeWidth={3} /> Terminate Session
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -163,16 +167,16 @@ export default function Sidebar() {
 
 function BarChart1({ size, className }) {
   return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2.5" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       className={className}
     >
       <path d="M3 3v18h18" />
