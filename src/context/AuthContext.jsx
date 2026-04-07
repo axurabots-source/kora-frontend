@@ -12,6 +12,9 @@ export const AuthProvider = ({ children }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
+    }).catch(err => {
+      console.error("Auth Load Error:", err)
+    }).finally(() => {
       setLoading(false)
     })
 
@@ -41,7 +44,11 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, signOut }}>
-      {!loading && children}
+      {loading ? (
+        <div className="min-h-screen bg-bg flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-white/20 border-r-white rounded-full animate-spin" />
+        </div>
+      ) : children}
     </AuthContext.Provider>
   )
 }

@@ -149,11 +149,11 @@ export default function Login() {
         <div className="p-4 bg-bg2/40 border border-border w-fit rounded-2xl mb-8 backdrop-blur-md">
            <Zap size={24} className="text-blue fill-blue" />
         </div>
-        <h1 className="text-[7rem] font-black text-white leading-[0.8] tracking-tighter mb-8">
+        <h1 className="text-[5rem] font-black text-white leading-[0.8] tracking-tighter mb-6">
           KORA<span className="text-blue">.</span>
         </h1>
-        <p className="text-xl text-text2 font-bold max-w-lg leading-relaxed mb-12 opacity-80 uppercase tracking-tight">
-          The high-fidelity financial operating system for <span className="text-white underline decoration-blue/30 underline-offset-8 decoration-4">elite enterprise sellers</span>.
+        <p className="text-lg text-text2 font-bold max-w-lg leading-relaxed mb-10 opacity-80 uppercase tracking-tight">
+          The high-fidelity financial operating system for <span className="text-white underline decoration-blue/30 underline-offset-4 decoration-2">elite enterprise sellers</span>.
         </p>
         
         <div className="space-y-6">
@@ -175,17 +175,17 @@ export default function Login() {
       {/* Access Terminal Panel */}
       <div className="flex-1 lg:flex-none w-full lg:w-[600px] bg-bg2 border-l border-border flex items-center justify-center p-8 relative z-20 shadow-[-100px_0_100px_-50px_rgba(0,0,0,0.5)]">
         <div className="w-full max-w-md animate-in slide-in-from-right-8 duration-700">
-          <div className="mb-12">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="px-3 py-1 bg-blue/10 border border-blue/20 rounded-md text-[9px] font-black text-blue uppercase tracking-widest leading-none">
+          <div className="mb-10">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="px-2 py-1 bg-blue/10 border border-blue/20 rounded-md text-[9px] font-black text-blue uppercase tracking-widest leading-none">
                 ENCRYPTED TRANSIT
               </div>
               <div className="w-1.5 h-1.5 rounded-full bg-green-light animate-pulse" />
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tight mb-2">
+            <h2 className="text-3xl font-black text-white tracking-tight mb-2">
               {forgotFlow > 0 ? 'Recover Password' : (mode === 'login' ? 'System Access' : 'Create Credentials')}
             </h2>
-            <p className="text-[10px] text-text3 font-black uppercase tracking-[0.3em] opacity-40">Enterprise Authorization Environment</p>
+            <p className="text-[9px] text-text3 font-black uppercase tracking-[0.3em] opacity-40">Enterprise Authorization Environment</p>
           </div>
 
           {forgotFlow > 0 ? (
@@ -198,7 +198,7 @@ export default function Login() {
                      placeholder="name@company.com" 
                      value={forgotEmail} 
                      onChange={e => setForgotEmail(e.target.value)} 
-                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl px-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                     className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl px-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
                      autoFocus
                    />
                  </div>
@@ -212,7 +212,7 @@ export default function Login() {
                      maxLength={6}
                      value={forgotCode} 
                      onChange={e => setForgotCode(e.target.value.replace(/[^0-9]/g, ''))} 
-                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl px-6 text-xl tracking-[0.5em] text-center font-black text-white outline-none transition-all shadow-inner" 
+                     className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl px-6 text-xl tracking-[0.5em] text-center font-black text-white outline-none transition-all shadow-inner" 
                      autoFocus
                    />
                    <p className="text-[10px] text-blue font-bold text-center pt-2">Enter the 6-digit code dispatched to your inbox.</p>
@@ -226,7 +226,7 @@ export default function Login() {
                      placeholder="••••••••" 
                      value={newPassword} 
                      onChange={e => setNewPassword(e.target.value)} 
-                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl px-6 text-sm font-bold text-white outline-none transition-all shadow-inner" 
+                     className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl px-6 text-sm font-bold text-white outline-none transition-all shadow-inner" 
                      autoFocus
                    />
                  </div>
@@ -237,14 +237,14 @@ export default function Login() {
                    type="button" 
                    onClick={() => setForgotFlow(0)} 
                    disabled={loading}
-                   className="flex-1 h-16 bg-bg text-text3 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] hover:text-white transition-colors"
+                   className="flex-1 h-12 bg-bg text-text3 rounded-xl font-black text-xs uppercase tracking-[0.2em] hover:text-white transition-colors"
                  >
                    Cancel
                  </button>
                  <button 
                    type="submit" 
                    disabled={loading} 
-                   className="flex-1 h-16 bg-white text-black rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center transition-all shadow-xl shadow-white/5"
+                   className="flex-1 h-12 bg-white text-black rounded-xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center transition-all shadow-xl shadow-white/5"
                  >
                    {loading ? 'Processing...' : (forgotFlow === 3 ? 'Save Password' : 'Confirm')}
                  </button>
@@ -264,7 +264,7 @@ export default function Login() {
                        maxLength={6}
                        value={otpCode} 
                        onChange={e => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))} 
-                       className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-xl tracking-[0.5em] text-center font-black text-white outline-none transition-all shadow-inner" 
+                       className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl pl-14 pr-6 text-xl tracking-[0.5em] text-center font-black text-white outline-none transition-all shadow-inner" 
                      />
                    </div>
                    <p className="text-[10px] text-blue font-bold text-center pt-2">Enter the 6-digit code dispatched to your inbox.</p>
@@ -282,7 +282,7 @@ export default function Login() {
                        placeholder="Authorized User Name" 
                        value={name} 
                        onChange={e => setName(e.target.value)} 
-                       className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                       className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
                      />
                    </div>
                  </div>
@@ -297,7 +297,7 @@ export default function Login() {
                      placeholder="name@company.com" 
                      value={email} 
                      onChange={e => setEmail(e.target.value)} 
-                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                     className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl pl-14 pr-6 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
                      disabled={otpMode}
                    />
                  </div>
@@ -312,7 +312,7 @@ export default function Login() {
                      placeholder="••••••••" 
                      value={password} 
                      onChange={e => setPassword(e.target.value)} 
-                     className="w-full h-14 bg-bg border-2 border-border focus:border-blue/30 rounded-2xl pl-14 pr-14 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
+                     className="w-full h-12 bg-bg border border-border focus:border-blue/30 rounded-xl pl-14 pr-14 text-sm font-bold text-white outline-none transition-all placeholder:text-text3/30 shadow-inner" 
                    />
                    <button 
                      type="button" 
@@ -336,7 +336,7 @@ export default function Login() {
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full h-16 bg-white text-black rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xl shadow-white/5 mt-4 group"
+              className="w-full h-12 bg-white text-black rounded-xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-4 hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xl shadow-white/5 mt-4 group"
             >
               {loading ? (
                 <div className="flex items-center gap-3">
@@ -362,24 +362,24 @@ export default function Login() {
 
           <button 
             onClick={signInWithGoogle} 
-            className="w-full h-14 bg-bg hover:bg-bg3 border border-border rounded-2xl flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-widest text-text2 hover:text-white transition-all group"
+            className="w-full h-12 bg-bg hover:bg-bg3 border border-border rounded-xl flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest text-text2 hover:text-white transition-all group"
           >
-            <div className="bg-white p-1 rounded-lg scale-90 group-hover:scale-100 transition-transform">
-               <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            <div className="bg-white p-1 rounded-md scale-90 group-hover:scale-100 transition-transform">
+               <svg width="14" height="14" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
             </div>
             Direct Authorization via Google
           </button>
 
           {/* Mode Switcher */}
-          <div className="mt-12 text-center p-6 bg-bg/40 rounded-[2rem] border border-border/50">
-            <p className="text-xs font-bold text-text3 mb-3">
+          <div className="mt-10 text-center p-4 bg-bg/40 rounded-2xl border border-border/50">
+            <p className="text-[10px] font-bold text-text3 mb-3">
               {mode === 'login' ? "Unauthorized on KORA?" : "Active credentials assigned?"}
             </p>
             <button 
               onClick={() => setMode(mode === 'login' ? 'signup' : 'login')} 
-              className="text-[11px] font-black uppercase tracking-widest text-white hover:text-blue transition-colors flex items-center justify-center gap-3 mx-auto w-fit"
+              className="text-[10px] font-black uppercase tracking-widest text-white hover:text-blue transition-colors flex items-center justify-center gap-2 mx-auto w-fit"
             >
-              {mode === 'login' ? <><Fingerprint size={16} /> Establish Provisioning</> : <><ShieldCheck size={16} /> Enter Gateway</>}
+              {mode === 'login' ? <><Fingerprint size={14} /> Establish Provisioning</> : <><ShieldCheck size={14} /> Enter Gateway</>}
             </button>
           </div>
         </div>
