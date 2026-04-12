@@ -67,7 +67,7 @@ const SectionLabel = ({ label }) => (
 )
 
 export default function Sidebar() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, user } = useAuth()
   const location = useLocation()
 
   // Ensure any lingering light theme is aggressively wiped
